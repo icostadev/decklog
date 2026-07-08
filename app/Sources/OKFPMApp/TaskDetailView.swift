@@ -1,5 +1,6 @@
 import SwiftUI
 import OKFKit
+import MarkdownUI
 
 struct TaskDetailView: View {
     let task: Concept
@@ -11,8 +12,7 @@ struct TaskDetailView: View {
                 Text(task.title).font(.title2).bold()
                 fields
                 Divider()
-                Text(bodyText)
-                    .font(.body)
+                Markdown(task.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -61,14 +61,5 @@ struct TaskDetailView: View {
             Spacer(minLength: 0)
         }
         .font(.callout)
-    }
-
-    // Iteration 1: best-effort markdown (inline styling only). Rich block rendering
-    // (headings, lists) comes with MarkdownUI in a later iteration.
-    private var bodyText: AttributedString {
-        (try? AttributedString(
-            markdown: task.body,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(task.body)
     }
 }

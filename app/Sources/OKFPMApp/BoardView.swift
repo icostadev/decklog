@@ -6,10 +6,10 @@ import OKFKit
 struct BoardView: View {
     let bundle: OKFBundle
     let projectID: String?
-    @Binding var selectedTaskID: String?
 
+    // `cancelled` is intentionally off-board; `blocked` is a derived card badge.
     private static let columns: [TaskStatus] = [
-        .backlog, .ready, .assigned, .inProgress, .inReview, .done, .blocked, .cancelled,
+        .draft, .ready, .inProgress, .inReview, .done,
     ]
 
     var body: some View {
@@ -19,8 +19,7 @@ struct BoardView: View {
                     ColumnView(
                         title: Self.label(status),
                         tasks: tasks(in: status),
-                        bundle: bundle,
-                        selectedTaskID: $selectedTaskID
+                        bundle: bundle
                     )
                 }
             }
@@ -71,7 +70,6 @@ struct ColumnView: View {
     let title: String
     let tasks: [Concept]
     let bundle: OKFBundle
-    @Binding var selectedTaskID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -81,12 +79,10 @@ struct ColumnView: View {
                 Text("\(tasks.count)").font(.caption).foregroundStyle(.secondary)
             }
             ForEach(tasks) { task in
-                TaskCard(
-                    task: task,
-                    bundle: bundle,
-                    isSelected: task.id == selectedTaskID
-                )
-                .onTapGesture { selectedTaskID = task.id }
+                NavigationLink(value: task.id) {
+                    TaskCard(task: task, bundle: bundle)
+                }
+                .buttonStyle(.plain)
             }
             Spacer(minLength: 0)
         }
@@ -97,7 +93,6 @@ struct ColumnView: View {
 struct TaskCard: View {
     let task: Concept
     let bundle: OKFBundle
-    let isSelected: Bool
 
     private var hasOpenBlockers: Bool {
         task.blockedBy.contains { bundle.concept($0)?.status != TaskStatus.done.rawValue }
@@ -124,10 +119,7 @@ struct TaskCard: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-        )
+        .contentShape(Rectangle())
     }
 }
 

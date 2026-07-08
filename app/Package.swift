@@ -6,11 +6,15 @@ let package = Package(
     platforms: [.macOS(.v13)],
     dependencies: [
         .package(path: "../OKFKit"),
+        .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.0.0"),
     ],
     targets: [
         .executableTarget(
             name: "OKFPMApp",
-            dependencies: [.product(name: "OKFKit", package: "OKFKit")]
+            dependencies: [
+                .product(name: "OKFKit", package: "OKFKit"),
+                .product(name: "MarkdownUI", package: "swift-markdown-ui"),
+            ]
         ),
     ]
 )

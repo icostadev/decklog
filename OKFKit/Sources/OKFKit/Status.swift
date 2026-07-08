@@ -1,15 +1,14 @@
 import Foundation
 
 /// Task lifecycle (DESIGN.md §4). A task is dispatchable only when `ready` and all
-/// blockers are `done` (enforced by the app, not this model).
+/// blockers are `done` (enforced by the app, not this model). "Blocked" is not a
+/// status — it is derived from unresolved `blocked_by` and shown as a badge.
 public enum TaskStatus: String, CaseIterable {
-    case backlog
+    case draft
     case ready
-    case assigned
     case inProgress = "in_progress"
     case inReview = "in_review"
     case done
-    case blocked
     case cancelled
 }
 

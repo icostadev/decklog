@@ -4,30 +4,33 @@ import OKFKit
 struct ContentView: View {
     @EnvironmentObject var store: BundleStore
     @State private var selectedProjectID: String?  // nil = all tasks
-    @State private var selectedTaskID: String?
+    @State private var issuesExpanded = false
 
     var body: some View {
+        VStack(spacing: 0) {
+            navigationArea
+            if store.bundle != nil {
+                ValidationPanel(issues: store.issues, isExpanded: $issuesExpanded)
+            }
+        }
+    }
+
+    private var navigationArea: some View {
         NavigationSplitView {
             SidebarView(selectedProjectID: $selectedProjectID)
-        } content: {
-            if let bundle = store.bundle {
-                BoardView(
-                    bundle: bundle,
-                    projectID: selectedProjectID,
-                    selectedTaskID: $selectedTaskID
-                )
-            } else {
-                EmptyBundleView()
-            }
         } detail: {
-            if let bundle = store.bundle,
-               let id = selectedTaskID,
-               let task = bundle.concept(id) {
-                TaskDetailView(task: task, bundle: bundle)
-            } else {
-                Text("Select a task")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            NavigationStack {
+                mainContent
+                    // Tapping a task card pushes its full-page view (back returns to the board).
+                    .navigationDestination(for: String.self) { taskID in
+                        if let bundle = store.bundle, let task = bundle.concept(taskID) {
+                            TaskDetailView(task: task, bundle: bundle)
+                        } else {
+                            Text("Task not found")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
             }
         }
         .toolbar {
@@ -42,6 +45,15 @@ struct ContentView: View {
                 }
                 .disabled(store.bundle == nil)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        if let bundle = store.bundle {
+            BoardView(bundle: bundle, projectID: selectedProjectID)
+        } else {
+            EmptyBundleView()
         }
     }
 }
@@ -62,20 +74,6 @@ struct SidebarView: View {
                 ForEach(projects) { project in
                     Label(project.title, systemImage: "folder")
                         .tag(Optional(project.id))
-                }
-            }
-
-            if !store.issues.isEmpty {
-                Section("Validation") {
-                    ForEach(Array(store.issues.enumerated()), id: \.offset) { _, issue in
-                        Label(
-                            "\(issue.conceptID): \(issue.message)",
-                            systemImage: issue.severity == .error
-                                ? "xmark.octagon" : "exclamationmark.triangle"
-                        )
-                        .font(.caption)
-                        .foregroundStyle(issue.severity == .error ? .red : .orange)
-                    }
                 }
             }
         }

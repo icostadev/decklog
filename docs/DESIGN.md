@@ -145,8 +145,9 @@ Statuses are per-type. Transitions are enforced by the app, not by the file form
 (a hand-edited illegal status is tolerated and surfaced as a warning, never a crash).
 
 - **Task (agent-executed):**
-  `backlog → ready → assigned → in_progress → in_review → done`
-  with `blocked` (re-entrant) and `cancelled` (terminal) reachable from any active state.
+  `draft → ready → in_progress → in_review → done`
+  with `cancelled` (terminal) reachable from any active state. **`blocked` is not a
+  status** — it is derived from unresolved `blocked_by` and shown as a badge.
   `ready` means the spec is self-contained enough to hand to an agent (has acceptance
   criteria + a `## Context` brief). A task is **dispatchable only when it is `ready` and
   all `blocked_by` are `done`** — a hard gate, not a warning (§9). `in_review` = the
@@ -155,8 +156,8 @@ Statuses are per-type. Transitions are enforced by the app, not by the file form
   and no work remains** — the app never merges. The transition is written by the PM
   agent (which can watch PR/merge state); the read-only UI never mutates it.
 - **Milestone / Project (not dispatched, not reviewed):**
-  `planned → active → done`, with `cancelled` reachable from any state. No `assigned` /
-  `in_review` — those are task-only (you don't dispatch or merge a milestone).
+  `planned → active → done`, with `cancelled` reachable from any state. No `in_review`
+  — that is task-only (you don't dispatch or merge a milestone).
 - **Objective:** `draft → active → {achieved | missed}` (`missed` is not failure —
   it's an outcome, OKR-style).
 - **Key Result:** derived, not set — `on_track | at_risk | done` computed from
@@ -265,7 +266,7 @@ Four parts:
    into a proposed tree of projects/milestones/tasks, proposes `blocked_by` edges, and
    drafts each task's `## Acceptance criteria` and `## Context` brief — **authoring any
    missing `knowledge/` concepts** the context needs. Its concrete job is to move tasks
-   from `backlog` to `ready` (§4). Every plan is **propose → user approves/edits in chat
+   from `draft` to `ready` (§4). Every plan is **propose → user approves/edits in chat
    → then commit**; it never re-plans unprompted. After a task finishes it can also
    capture learnings into a `knowledge/` concept (the only path for agent-produced
    knowledge in v1 — executors never write to the bundle).
@@ -282,7 +283,7 @@ Four parts:
    - output = one or more PRs, recorded in the task's `artifacts` list.
 
    Claude Code stream events are parsed and shown live via **SwiftTerm** in the task
-   detail; the dispatcher advances lifecycle status `assigned → in_progress → in_review`
+   detail; the dispatcher sets `in_progress` on start and `in_review` when the PR opens,
    automatically (via the bundle core — see the writer rule below). The user follows
    along or ignores it and checks back later. **Multiple executors may run
    concurrently**, each in its own worktree, managed by Swift `async`/actors; the UI
@@ -292,17 +293,19 @@ Four parts:
    files. Its only actions are executor commands (run / cancel a task); all content
    authoring goes through the PM agent.
    - **chat panel** — talk to the PM agent (the sole author of bundle content);
-   - **kanban board** — a task board with columns by task `status`, scoped/filtered by
-     project / milestone / cycle (§8); cards reflect `order` but cannot be dragged;
-   - **roadmap / objective tree** (Swift Charts for the timeline), and a **task detail**
-     pane with the spec, live executor progress (SwiftTerm), and links to the task's
-     `artifacts` (PRs). Reviewing/merging PRs and marking the task `done` happen via the
-     PM agent, not UI buttons.
+   - **kanban board** — the main view: a task board with columns by task `status`,
+     scoped/filtered by project / milestone / cycle (§8); cards reflect `order` but
+     cannot be dragged;
+   - **task detail** — a **full-page** view pushed when a card is tapped (back returns
+     to the board), showing the spec, live executor progress (SwiftTerm), and links to
+     the task's `artifacts` (PRs). Not a persistent side pane;
+   - **roadmap / objective tree** (Swift Charts for the timeline). Reviewing/merging PRs
+     and marking the task `done` happen via the PM agent, not UI buttons.
 
 **Who writes the bundle.** Two writers only, both through the bundle core: the **PM
 agent** authors all content (entities, fields, hand-set status, ordering) and writes
 the `done` transition; the **executor dispatcher** writes in-flight task lifecycle
-transitions (`assigned → in_progress → in_review`) as bookkeeping. The UI and the human
+transitions (`in_progress → in_review`) as bookkeeping. The UI and the human
 never write directly — the human acts through chat, plus run/cancel commands.
 
 **Runtime & stack (decided):** a **native Swift / SwiftUI macOS app** — no webview and
@@ -400,7 +403,7 @@ and a read-only UI. Proves the single-writer chat loop.
 
 ### Iteration 3 — Dispatch one task, end to end (the thesis)
 Dispatch a `ready` + unblocked task → Claude Code in a worktree → live SwiftTerm output
-→ `assigned → in_progress → in_review` → executor opens a PR → human merges → `done`.
+→ `in_progress → in_review` → executor opens a PR → human merges → `done`.
 Single executor only; hard dispatch gate in place.
 → *Validate:* the whole product in miniature. If this loop doesn't feel good, we learn it
 here, cheaply.
