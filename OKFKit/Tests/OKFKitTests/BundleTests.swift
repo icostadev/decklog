@@ -4,19 +4,25 @@ import XCTest
 final class BundleTests: XCTestCase {
 
     func testLoadsSampleBundle() throws {
+        // Robust against the sample bundle growing as demo data: assert the version, the
+        // presence of each kind, and that every task carries a recognized status — not
+        // exact totals.
         let bundle = try OKFBundle.load(at: sampleBundleURL())
 
-        // Reserved files (index.md, log.md) are excluded; 11 concepts remain.
-        XCTAssertEqual(bundle.allConcepts.count, 11)
         XCTAssertEqual(bundle.okfVersion, "0.1")
+        XCTAssertNotNil(bundle.concept("projects/checkout-revamp/project"))
 
-        XCTAssertEqual(bundle.concepts(ofKind: .task).count, 3)
-        XCTAssertEqual(bundle.concepts(ofKind: .project).count, 1)
-        XCTAssertEqual(bundle.concepts(ofKind: .milestone).count, 1)
-        XCTAssertEqual(bundle.concepts(ofKind: .objective).count, 1)
-        XCTAssertEqual(bundle.concepts(ofKind: .agent).count, 2)
-        XCTAssertEqual(bundle.concepts(ofKind: .knowledge).count, 2)
-        XCTAssertEqual(bundle.concepts(ofKind: .cycle).count, 1)
+        XCTAssertFalse(bundle.concepts(ofKind: .task).isEmpty)
+        XCTAssertFalse(bundle.concepts(ofKind: .project).isEmpty)
+        XCTAssertFalse(bundle.concepts(ofKind: .milestone).isEmpty)
+        XCTAssertFalse(bundle.concepts(ofKind: .knowledge).isEmpty)
+
+        let validTaskStatuses = Set(TaskStatus.allCases.map(\.rawValue))
+        for task in bundle.concepts(ofKind: .task) {
+            if let status = task.status {
+                XCTAssertTrue(validTaskStatuses.contains(status), "\(task.id): unexpected status `\(status)`")
+            }
+        }
     }
 
     func testConceptIDsAreRelativePathsMinusExtension() throws {

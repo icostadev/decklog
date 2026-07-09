@@ -1,11 +1,12 @@
-# OKF-PM — Design & Data Model (v0.1 draft)
+# Decklog — Design & Data Model (v0.1 draft)
 
 A git-native project management tool where every objective, project, milestone, and
 task is a plain markdown file. Storage is an [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
 (Open Knowledge Format) bundle; git is the database.
 
 > **Status:** draft for discussion. Open questions are collected at the end.
-> Working name "OKF-PM" is a placeholder.
+> **Name:** Decklog — a ship's *deck log* is the running, append-on record kept on
+> deck; here it's the git-native, append-only record of your projects.
 
 ---
 
@@ -364,7 +365,7 @@ story — and UI components are hand-built rather than reused from a web stack.)
 - **No `estimate` in v1:** story points don't fit AI executors; if we ever want a cost
   signal, capture observed wall-clock/cost from the run, post-hoc.
 - **Field names: unprefixed** (`status`, `due`, `assignee`) — single producer, dedicated
-  repo, so no collision risk. Documented as the "okf-pm extension vocabulary" in case we
+  repo, so no collision risk. Documented as the "Decklog extension vocabulary" in case we
   ever share bundles across tools and need to namespace or migrate.
 - **Dependency gating: hard block.** A task is dispatchable only when `status: ready`
   **and** all `blocked_by` are `done`; the Run action is otherwise disabled. (Blocking an

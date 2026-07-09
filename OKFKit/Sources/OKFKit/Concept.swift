@@ -28,7 +28,7 @@ public struct Concept: Identifiable {
         return "---\n\(yaml)---\n\(body)"
     }
 
-    // MARK: Typed field accessors (the okf-pm extension vocabulary)
+    // MARK: Typed field accessors (the Decklog extension vocabulary)
 
     public var type: String { frontmatter.string("type") ?? "" }
     public var kind: ConceptKind { ConceptKind(type: type) }

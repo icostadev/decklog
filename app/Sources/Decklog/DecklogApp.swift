@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct OKFPMApp: App {
+struct Decklog: App {
     @StateObject private var store = BundleStore()
 
     var body: some Scene {

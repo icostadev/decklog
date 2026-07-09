@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "OKFPMApp",
+    name: "Decklog",
     platforms: [.macOS(.v13)],
     dependencies: [
         .package(path: "../OKFKit"),
@@ -10,7 +10,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "OKFPMApp",
+            name: "Decklog",
             dependencies: [
                 .product(name: "OKFKit", package: "OKFKit"),
                 .product(name: "MarkdownUI", package: "swift-markdown-ui"),

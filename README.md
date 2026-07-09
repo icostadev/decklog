@@ -1,4 +1,4 @@
-# OKF-PM
+# Decklog
 
 A personal, macOS-only project-management app where the work lives as an
 [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
@@ -39,7 +39,7 @@ swift test
 ## Build a `.app` (macOS)
 
 ```sh
-scripts/build-app.sh            # release build → dist/OKF-PM.app (ad-hoc signed)
+scripts/build-app.sh            # release build → dist/Decklog.app (ad-hoc signed)
 scripts/build-app.sh debug      # debug build
 ```
 
@@ -48,7 +48,7 @@ The script builds via SwiftPM, wraps the binary in a launchable `.app` bundle wi
 
 ## Run the app (macOS + Xcode)
 
-Open the app package in Xcode and run the `OKFPMApp` scheme:
+Open the app package in Xcode and run the `Decklog` scheme:
 
 ```sh
 open app/Package.swift          # opens in Xcode
@@ -58,8 +58,8 @@ Or from the terminal on macOS:
 
 ```sh
 cd app
-OKFPM_BUNDLE="$(cd ../sample-bundle && pwd)" swift run OKFPMApp
+DECKLOG_BUNDLE="$(cd ../sample-bundle && pwd)" swift run Decklog
 ```
 
-`OKFPM_BUNDLE` auto-opens that bundle on launch (dev convenience); otherwise use
+`DECKLOG_BUNDLE` auto-opens that bundle on launch (dev convenience); otherwise use
 **Open Bundle…** (⌘O) and pick the `sample-bundle` directory.

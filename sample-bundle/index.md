@@ -1,9 +1,9 @@
 ---
 okf_version: "0.1"
-title: "Sample OKF-PM bundle"
+title: "Sample Decklog bundle"
 ---
 
-# Sample OKF-PM bundle
+# Sample Decklog bundle
 
 A small hand-authored bundle used to develop and validate Iteration 1.
 
@@ -12,3 +12,5 @@ A small hand-authored bundle used to develop and validate Iteration 1.
 
 ## Projects
 * [Checkout revamp](/projects/checkout-revamp/project.md)
+* [Todo CLI](/projects/todo-app/project.md)
+* [Financial assets management](/projects/financial-assets/project.md)

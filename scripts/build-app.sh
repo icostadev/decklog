@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build the OKF-PM macOS app and assemble a launchable .app bundle.
+# Build the Decklog macOS app and assemble a launchable .app bundle.
 # Requires macOS with a Swift toolchain (Xcode command-line tools).
 #
 # Usage:
@@ -9,9 +9,9 @@
 set -euo pipefail
 
 CONFIG="${1:-release}"
-APP_TARGET="OKFPMApp"        # SwiftPM executable target name
-BUNDLE_NAME="OKF-PM"         # user-facing .app name
-BUNDLE_ID="com.okfpm.app"
+APP_TARGET="Decklog"        # SwiftPM executable target name
+BUNDLE_NAME="Decklog"         # user-facing .app name
+BUNDLE_ID="com.decklog.app"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_PKG="$ROOT/app"
@@ -19,7 +19,7 @@ DIST="$ROOT/dist"
 
 # --- preconditions ---------------------------------------------------------
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  echo "error: the OKF-PM app is macOS-only (it uses SwiftUI). Run this on a Mac." >&2
+  echo "error: the Decklog app is macOS-only (it uses SwiftUI). Run this on a Mac." >&2
   exit 1
 fi
 if ! command -v swift >/dev/null 2>&1; then
@@ -78,4 +78,4 @@ echo
 echo "Run it:"
 echo "    open \"$APP_DIR\""
 echo "  or, pointed at the sample bundle:"
-echo "    OKFPM_BUNDLE=\"$ROOT/sample-bundle\" \"$APP_DIR/Contents/MacOS/$BUNDLE_NAME\""
+echo "    DECKLOG_BUNDLE=\"$ROOT/sample-bundle\" \"$APP_DIR/Contents/MacOS/$BUNDLE_NAME\""

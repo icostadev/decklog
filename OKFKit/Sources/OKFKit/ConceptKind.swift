@@ -1,6 +1,6 @@
 import Foundation
 
-/// The known OKF-PM concept types. Because OKF types are just strings and consumers
+/// The known Decklog concept types. Because OKF types are just strings and consumers
 /// must tolerate unknown ones, anything unrecognized maps to `.other`.
 public enum ConceptKind: Equatable {
     case objective
