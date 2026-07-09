@@ -89,6 +89,16 @@ struct SidebarView: View {
         store.bundle?.concepts(ofKind: .project) ?? []
     }
 
+    /// A short, friendly repo label: basename without a trailing `.git`.
+    static func shortRepoName(_ repo: String) -> String {
+        var s = repo
+        if s.hasSuffix(".git") { s = String(s.dropLast(4)) }
+        if let idx = s.lastIndex(where: { $0 == "/" || $0 == ":" }) {
+            s = String(s[s.index(after: idx)...])
+        }
+        return s.isEmpty ? repo : s
+    }
+
     var body: some View {
         List {
             Section("Scope") {
@@ -96,11 +106,19 @@ struct SidebarView: View {
                          isSelected: selectedScope == Self.allScope) {
                     selectedScope = Self.allScope
                 }
+            }
+            Section("Projects") {
                 ForEach(projects) { project in
-                    ScopeRow(title: project.title, systemImage: "folder",
-                             isSelected: selectedScope == project.id) {
+                    ScopeRow(
+                        title: project.title,
+                        systemImage: "folder",
+                        subtitle: project.repo.map(Self.shortRepoName) ?? "No repo linked",
+                        subtitleIcon: project.repo == nil ? "questionmark.circle" : "arrow.triangle.branch",
+                        isSelected: selectedScope == project.id
+                    ) {
                         selectedScope = project.id
                     }
+                    .help(project.repo ?? "No repository linked")
                 }
             }
         }
@@ -114,14 +132,32 @@ struct SidebarView: View {
 private struct ScopeRow: View {
     let title: String
     let systemImage: String
+    var subtitle: String? = nil
+    var subtitleIcon: String? = nil
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                    if let subtitle {
+                        HStack(spacing: 3) {
+                            if let subtitleIcon { Image(systemName: subtitleIcon) }
+                            Text(subtitle).lineLimit(1).truncationMode(.middle)
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .listRowBackground(
