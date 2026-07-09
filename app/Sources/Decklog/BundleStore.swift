@@ -13,6 +13,11 @@ final class BundleStore: ObservableObject {
     /// Executor runs keyed by task id (the most recent run for each task).
     @Published var executors: [String: ExecutorSession] = [:]
 
+    /// All runs this session, sorted for display in the Runs panel.
+    var runs: [ExecutorSession] {
+        executors.values.sorted { $0.taskID < $1.taskID }
+    }
+
     init() {
         if let path = ProcessInfo.processInfo.environment["DECKLOG_BUNDLE"] {
             load(url: URL(fileURLWithPath: path))

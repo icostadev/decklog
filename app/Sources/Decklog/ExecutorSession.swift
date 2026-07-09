@@ -8,7 +8,7 @@ import OKFKit
 @MainActor
 final class ExecutorSession: ObservableObject {
 
-    enum Phase: String { case preparing, running, committing, review, failed }
+    enum Phase: String { case preparing, running, committing, review, failed, cancelled }
 
     struct LogLine: Identifiable {
         enum Kind { case output, activity, system, error }
@@ -22,10 +22,12 @@ final class ExecutorSession: ObservableObject {
     @Published private(set) var branch: String?
 
     let taskID: String
-    private let taskTitle: String
+    let taskTitle: String
     private let prompt: String
     private let repoURL: URL
     private var timedOut = false
+    private var cancelled = false
+    private var process: Process?
 
     /// Called with a new task status (`in_progress`, `in_review`) — the host persists it.
     var onStatusChange: ((String) -> Void)?
@@ -42,6 +44,14 @@ final class ExecutorSession: ObservableObject {
     func start() {
         guard phase == .preparing else { return }
         Task { await run() }
+    }
+
+    /// Stop an in-flight run: terminate the executor. The run then tears down its
+    /// worktree and returns the task to `ready`.
+    func cancel() {
+        guard [.preparing, .running, .committing].contains(phase) else { return }
+        cancelled = true
+        process?.terminate()
     }
 
     private func run() async {
@@ -87,6 +97,7 @@ final class ExecutorSession: ObservableObject {
             try? WorktreeManager.remove(worktree, inRepo: repoURL)
             return fail("Failed to launch claude: \(error.localizedDescription)")
         }
+        self.process = process
 
         // Now that the executor is running, mark the task in-progress.
         branch = branchName
@@ -110,6 +121,16 @@ final class ExecutorSession: ObservableObject {
         } catch { /* stream ended; status checked below */ }
         process.waitUntilExit()
         watchdog.cancel()
+
+        // Cancelled by the user: discard the run (no commit) and free the task.
+        if cancelled {
+            append(.system, "Cancelled — discarding run")
+            try? WorktreeManager.remove(worktree, inRepo: repoURL)
+            try? WorktreeManager.prune(inRepo: repoURL)
+            onStatusChange?(TaskStatus.ready.rawValue)
+            phase = .cancelled
+            return
+        }
 
         if timedOut {
             append(.error, "Executor exceeded the \(timeout)s time limit and was stopped.")

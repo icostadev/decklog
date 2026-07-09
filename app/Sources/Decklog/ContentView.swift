@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var selectedScope: String = SidebarView.allScope
     @State private var issuesExpanded = false
     @State private var showChat = true
+    @State private var showRuns = false
     @State private var navPath = NavigationPath()
 
     var body: some View {
@@ -61,6 +62,15 @@ struct ContentView: View {
                     Label("PM agent", systemImage: "bubble.left.and.text.bubble.right")
                 }
                 .disabled(store.agent == nil)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button { showRuns.toggle() } label: {
+                    Label("Runs", systemImage: "play.circle")
+                }
+                .disabled(store.executors.isEmpty)
+                .popover(isPresented: $showRuns, arrowEdge: .bottom) {
+                    RunsView().environmentObject(store)
+                }
             }
         }
     }
