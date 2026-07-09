@@ -99,6 +99,17 @@ struct SidebarView: View {
         return s.isEmpty ? repo : s
     }
 
+    /// Sidebar label for a project's repo, resolving relative paths (e.g. `..`) against
+    /// the bundle root so they show a real directory name.
+    private func repoLabel(for project: Concept) -> String {
+        guard let repo = project.repo else { return "No repo linked" }
+        if repo.hasPrefix("."), let root = store.bundle?.rootURL {
+            return URL(fileURLWithPath: repo, relativeTo: root)
+                .standardizedFileURL.lastPathComponent
+        }
+        return Self.shortRepoName(repo)
+    }
+
     var body: some View {
         List {
             Section("Scope") {
@@ -112,7 +123,7 @@ struct SidebarView: View {
                     ScopeRow(
                         title: project.title,
                         systemImage: "folder",
-                        subtitle: project.repo.map(Self.shortRepoName) ?? "No repo linked",
+                        subtitle: repoLabel(for: project),
                         subtitleIcon: project.repo == nil ? "questionmark.circle" : "arrow.triangle.branch",
                         isSelected: selectedScope == project.id
                     ) {

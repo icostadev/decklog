@@ -5,12 +5,14 @@ title: "Sample Decklog bundle"
 
 # Sample Decklog bundle
 
-A small hand-authored bundle used to develop and validate Iteration 1.
+A bundle used to develop Decklog. It contains **Decklog itself** (dogfooding — the tool
+tracks its own development) alongside a few fictional demo projects.
 
 ## Objectives
 * [Grow Q3 revenue](/objectives/q3-growth.md)
 
 ## Projects
+* [Decklog](/projects/decklog/project.md) — building Decklog, tracked in Decklog
 * [Checkout revamp](/projects/checkout-revamp/project.md)
 * [Todo CLI](/projects/todo-app/project.md)
 * [Financial assets management](/projects/financial-assets/project.md)
