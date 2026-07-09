@@ -25,6 +25,7 @@ final class ExecutorSession: ObservableObject {
     private let taskTitle: String
     private let prompt: String
     private let repoURL: URL
+    private var timedOut = false
 
     /// Called with a new task status (`in_progress`, `in_review`) — the host persists it.
     var onStatusChange: ((String) -> Void)?
@@ -95,12 +96,24 @@ final class ExecutorSession: ObservableObject {
         inPipe.fileHandleForWriting.write(Data(prompt.utf8))
         inPipe.fileHandleForWriting.closeFile()
 
+        // Safety ceiling: stop the run if it exceeds the wall-clock budget.
+        let timeout = Self.timeoutSeconds
+        let watchdog = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(timeout) * 1_000_000_000)
+            guard let self, process.isRunning else { return }
+            self.timedOut = true
+            process.terminate()
+        }
+
         do {
             for try await line in outPipe.fileHandleForReading.bytes.lines { ingest(line) }
         } catch { /* stream ended; status checked below */ }
         process.waitUntilExit()
+        watchdog.cancel()
 
-        if process.terminationStatus != 0 {
+        if timedOut {
+            append(.error, "Executor exceeded the \(timeout)s time limit and was stopped.")
+        } else if process.terminationStatus != 0 {
             let stderr = String(decoding: errPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             append(.error, stderr.isEmpty ? "claude exited with status \(process.terminationStatus)" : stderr)
@@ -167,6 +180,13 @@ final class ExecutorSession: ObservableObject {
     }
 
     // MARK: Claude CLI resolution (shared shape with PMAgentSession)
+
+    /// Wall-clock budget for a single run (override with DECKLOG_EXECUTOR_TIMEOUT seconds).
+    private static var timeoutSeconds: Int {
+        if let value = ProcessInfo.processInfo.environment["DECKLOG_EXECUTOR_TIMEOUT"],
+           let seconds = Int(value), seconds > 0 { return seconds }
+        return 900
+    }
 
     private static func childEnvironment() -> [String: String] {
         var env = ProcessInfo.processInfo.environment

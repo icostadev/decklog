@@ -2,7 +2,8 @@
 type: task
 title: "Executor safety ceilings"
 description: "Per-dispatch wall-clock (and optional turn) cap; clean failure handling."
-status: ready
+status: in_review
+assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-4
 timestamp: 2026-07-09T00:00:00Z
