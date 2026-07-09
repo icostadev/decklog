@@ -2,7 +2,7 @@
 type: task
 title: "Executor dispatcher"
 description: "Run a task in a worktree, stream output, commit the branch."
-status: ready
+status: in_review
 priority: p1
 parent: projects/decklog/milestones/iteration-3
 blocked_by:

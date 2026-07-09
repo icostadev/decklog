@@ -16,3 +16,4 @@ tracks its own development) alongside a few fictional demo projects.
 * [Checkout revamp](/projects/checkout-revamp/project.md)
 * [Todo CLI](/projects/todo-app/project.md)
 * [Financial assets management](/projects/financial-assets/project.md)
+* [Scratch](/projects/scratch/project.md) — sandbox for testing task execution
