@@ -2,7 +2,7 @@
 type: task
 title: "Worktree cleanup"
 description: "Remove a run's worktree after it commits; prune stale worktrees."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p1
 parent: projects/decklog/milestones/iteration-4

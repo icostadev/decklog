@@ -2,7 +2,7 @@
 type: task
 title: "Concurrent executors"
 description: "Run multiple tasks at once, each in its own worktree; active-run list."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-4
