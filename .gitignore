@@ -13,3 +13,6 @@ Package.resolved
 
 # Pasted screenshots
 orca-paste-*.png
+
+# Local scratch repo used to test task execution
+scratch-repo/
