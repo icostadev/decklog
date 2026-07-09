@@ -2,16 +2,17 @@
 type: task
 title: "Add a greeting to the README"
 description: "Add a friendly greeting line to the scratch repo's README."
-status: ready
+status: done
 priority: p3
 timestamp: 2026-07-09T00:00:00Z
+artifacts:
+- decklog/projects-scratch-tasks-add-greeting
 ---
-
 A tiny task to exercise the executor end to end.
 
 ## Acceptance criteria
 
-- [ ] `README.md` contains a friendly one-line greeting near the top
+- [x] `README.md` contains a friendly one-line greeting near the top
 
 ## Context
 

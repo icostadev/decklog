@@ -2,11 +2,13 @@
 type: task
 title: "Executor dispatcher"
 description: "Run a task in a worktree, stream output, commit the branch."
-status: in_review
+status: done
 priority: p1
 parent: projects/decklog/milestones/iteration-3
 blocked_by:
   - projects/decklog/tasks/execution-core
+artifacts:
+  - "https://github.com/icostadev/decklog/commit/b930e0e"
 timestamp: 2026-07-09T00:00:00Z
 ---
 

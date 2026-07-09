@@ -32,4 +32,9 @@ public enum WorktreeManager {
             return URL(fileURLWithPath: String(line.dropFirst("worktree ".count)))
         }
     }
+
+    /// Drop admin records for worktrees whose directories are gone (`git worktree prune`).
+    public static func prune(inRepo repo: URL) throws {
+        try BundleGit.run(["worktree", "prune"], in: repo)
+    }
 }

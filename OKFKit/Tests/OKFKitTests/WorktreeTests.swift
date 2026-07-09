@@ -40,4 +40,16 @@ final class WorktreeTests: XCTestCase {
         try WorktreeManager.remove(wt, inRepo: repo)
         XCTAssertFalse(FileManager.default.fileExists(atPath: worktreePath.path))
     }
+
+    func testPruneDropsStaleWorktree() throws {
+        let wt = try WorktreeManager.create(inRepo: repo, branch: "decklog/t2", at: worktreePath)
+        // Simulate a stale worktree: delete its directory out from under git.
+        try FileManager.default.removeItem(at: wt.path)
+        XCTAssertTrue(try WorktreeManager.list(inRepo: repo)
+            .map { $0.standardizedFileURL.path }.contains(worktreePath.standardizedFileURL.path))
+
+        try WorktreeManager.prune(inRepo: repo)
+        XCTAssertFalse(try WorktreeManager.list(inRepo: repo)
+            .map { $0.standardizedFileURL.path }.contains(worktreePath.standardizedFileURL.path))
+    }
 }

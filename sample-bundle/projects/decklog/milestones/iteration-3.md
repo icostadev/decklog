@@ -2,7 +2,7 @@
 type: milestone
 title: "Iteration 3 — Task execution"
 description: "Dispatch a task to a Claude Code executor in a git worktree."
-status: active
+status: done
 project: projects/decklog/project
 timestamp: 2026-07-09T00:00:00Z
 ---

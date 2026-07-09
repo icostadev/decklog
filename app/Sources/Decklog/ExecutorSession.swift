@@ -115,6 +115,15 @@ final class ExecutorSession: ObservableObject {
             append(.error, "Commit failed: \(error.localizedDescription)")
         }
 
+        // 3b. Remove the worktree — the branch preserves the work.
+        do {
+            try WorktreeManager.remove(worktree, inRepo: repoURL)
+            append(.system, "Cleaned up worktree (branch `\(branchName)` kept)")
+        } catch {
+            append(.error, "Worktree cleanup failed: \(error.localizedDescription)")
+            try? WorktreeManager.prune(inRepo: repoURL)
+        }
+
         // 4. Hand off for human review.
         onArtifact?(branchName)
         onStatusChange?(TaskStatus.inReview.rawValue)
