@@ -101,8 +101,10 @@ struct ContentView: View {
                         withAnimation(.easeInOut(duration: 0.15)) { issuesExpanded = true }
                     }
                 }
-                if selectedScope != SidebarView.allScope,
-                   let scoped = bundle.concept(selectedScope), scoped.kind == .objective {
+                if selectedScope == SidebarView.planScope {
+                    PlanView(bundle: bundle)
+                } else if selectedScope != SidebarView.allScope,
+                          let scoped = bundle.concept(selectedScope), scoped.kind == .objective {
                     ObjectiveView(objective: scoped, bundle: bundle)
                 } else {
                     BoardView(
@@ -147,6 +149,8 @@ struct LoadErrorBanner: View {
 struct SidebarView: View {
     /// Sentinel value for the "All tasks" scope.
     static let allScope = "__all_tasks__"
+    /// Sentinel value for the Plan (dependency-sequence) scope.
+    static let planScope = "__plan__"
 
     @EnvironmentObject var store: BundleStore
     @Binding var selectedScope: String
@@ -192,6 +196,10 @@ struct SidebarView: View {
                 ScopeRow(title: "All tasks", systemImage: "tray.full",
                          isSelected: selectedScope == Self.allScope) {
                     selectedScope = Self.allScope
+                }
+                ScopeRow(title: "Plan", systemImage: "list.number",
+                         isSelected: selectedScope == Self.planScope) {
+                    selectedScope = Self.planScope
                 }
             }
             Section("Projects") {

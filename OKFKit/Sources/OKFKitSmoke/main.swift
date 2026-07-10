@@ -177,6 +177,29 @@ ok(rr.total == 3, "rollup total == 3")
 ok(rr.doneCount == 1, "rollup doneCount == 1")
 ok(abs(rr.fractionDone - 1.0 / 3.0) < 0.0001, "rollup fractionDone ≈ 0.33")
 
+// MARK: plan order (sequence-view)
+
+print("== plan order ==")
+let planConcepts = [
+    try Concept.parse(id: "projects/p/tasks/a", raw: "---\ntype: task\nstatus: ready\n---\n"),
+    try Concept.parse(id: "projects/p/tasks/b", raw: "---\ntype: task\nstatus: ready\nblocked_by: [projects/p/tasks/a]\n---\n"),
+    try Concept.parse(id: "projects/p/tasks/c", raw: "---\ntype: task\nstatus: ready\nblocked_by: [projects/p/tasks/b]\n---\n"),
+    try Concept.parse(id: "projects/p/project", raw: "---\ntype: project\n---\n"),
+]
+let pb = OKFBundle.inMemory(planConcepts)
+let ordered = pb.planOrder(pb.tasks(inProject: "projects/p/project")).map(\.id)
+ok(ordered == ["projects/p/tasks/a", "projects/p/tasks/b", "projects/p/tasks/c"],
+   "planOrder: blockers come before blocked (a → b → c)")
+// A cycle must not hang and must return every task once.
+let cyc = OKFBundle.inMemory([
+    try Concept.parse(id: "projects/q/tasks/x", raw: "---\ntype: task\nblocked_by: [projects/q/tasks/y]\n---\n"),
+    try Concept.parse(id: "projects/q/tasks/y", raw: "---\ntype: task\nblocked_by: [projects/q/tasks/x]\n---\n"),
+    try Concept.parse(id: "projects/q/project", raw: "---\ntype: project\n---\n"),
+])
+ok(Set(cyc.planOrder(cyc.tasks(inProject: "projects/q/project")).map(\.id))
+    == ["projects/q/tasks/x", "projects/q/tasks/y"],
+   "planOrder: cycle is tolerated, all tasks returned")
+
 // MARK: summary
 
 print("")
