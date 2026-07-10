@@ -56,4 +56,32 @@ final class ValidationTests: XCTestCase {
         let issues = OKFBundle.inMemory([task]).validate()
         XCTAssertFalse(issues.contains { $0.message.contains("unknown status") })
     }
+
+    func testFlagsTaskWithNoStatus() throws {
+        // A task with no status can't be placed in a lifecycle column — must be flagged,
+        // not silently dropped from the board.
+        let task = try makeConcept("projects/x/tasks/t1", "type: task\ntitle: T1")
+        let issues = OKFBundle.inMemory([task]).validate()
+        XCTAssertTrue(issues.contains {
+            $0.conceptID == "projects/x/tasks/t1" && $0.message.contains("no `status`")
+        }, "got: \(issues)")
+    }
+
+    func testFlagsFileUnderTasksDirNotTypedAsTask() throws {
+        // A file under tasks/ that isn't `type: task` never reaches the board — flag it.
+        let note = try makeConcept("projects/x/tasks/t1", "type: knowledge\nstatus: active")
+        let issues = OKFBundle.inMemory([note]).validate()
+        XCTAssertTrue(issues.contains {
+            $0.conceptID == "projects/x/tasks/t1" && $0.message.contains("under tasks/")
+        }, "got: \(issues)")
+    }
+
+    func testStatusedTaskUnderTasksDirIsClean() throws {
+        // A well-formed task under tasks/ triggers neither new placement warning.
+        let task = try makeConcept("projects/x/tasks/t1", "type: task\nstatus: ready")
+        let issues = OKFBundle.inMemory([task]).validate()
+        XCTAssertFalse(issues.contains {
+            $0.message.contains("no `status`") || $0.message.contains("under tasks/")
+        }, "got: \(issues)")
+    }
 }

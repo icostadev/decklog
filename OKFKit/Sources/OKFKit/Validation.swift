@@ -31,6 +31,7 @@ public extension OKFBundle {
             if let statusIssue = statusIssue(for: c) {
                 issues.append(statusIssue)
             }
+            issues.append(contentsOf: placementIssues(for: c))
             issues.append(contentsOf: dateIssues(for: c))
         }
 
@@ -64,6 +65,39 @@ public extension OKFBundle {
             conceptID: c.id,
             message: "unknown status `\(status)` for type `\(c.type)`"
         )
+    }
+
+    /// Flags concepts that silently disappear from the board: a file under a `tasks/`
+    /// directory that isn't typed as a task (so it's not a `.task` at all), or a task with
+    /// no `status` (so it can't sit in a lifecycle column — it lands under "Unplaced").
+    private func placementIssues(for c: Concept) -> [ValidationIssue] {
+        var issues: [ValidationIssue] = []
+
+        if Self.isUnderTasksDir(c.id), c.kind != .task {
+            let shown = c.type.isEmpty ? "none" : "`\(c.type)`"
+            issues.append(.init(
+                severity: .warning,
+                conceptID: c.id,
+                message: "under tasks/ but type is \(shown) — expected `task`; it won't appear on the board"
+            ))
+        }
+
+        if c.kind == .task, (c.status ?? "").isEmpty {
+            issues.append(.init(
+                severity: .warning,
+                conceptID: c.id,
+                message: "no `status` set — shown under \u{201C}Unplaced\u{201D}"
+            ))
+        }
+
+        return issues
+    }
+
+    /// True when the file sits directly in a `tasks/` directory (its parent path component
+    /// is `tasks`), e.g. `projects/x/tasks/task-001`.
+    private static func isUnderTasksDir(_ id: String) -> Bool {
+        let parts = id.split(separator: "/")
+        return parts.count >= 2 && String(parts[parts.count - 2]) == "tasks"
     }
 
     private func dateIssues(for c: Concept) -> [ValidationIssue] {

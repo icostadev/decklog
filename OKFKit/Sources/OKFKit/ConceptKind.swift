@@ -14,7 +14,10 @@ public enum ConceptKind: Equatable {
     case other(String)
 
     public init(type: String) {
-        switch type {
+        // Match case-insensitively (and trim surrounding whitespace): bundles authored by
+        // hand or by other tools commonly capitalize (`Task`, `Project`). Unknown types keep
+        // their original spelling in `.other`.
+        switch type.trimmingCharacters(in: .whitespaces).lowercased() {
         case "objective":   self = .objective
         case "key-result":  self = .keyResult
         case "project":     self = .project

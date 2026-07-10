@@ -30,6 +30,16 @@ final class ParsingTests: XCTestCase {
         XCTAssertTrue(c.body.hasPrefix("Body line one."))
     }
 
+    func testKindMatchesTypeCaseInsensitively() throws {
+        // Bundles authored elsewhere often capitalize the type; it must still map to `.task`
+        // (otherwise the whole board goes empty). The raw `type` string is preserved as-is.
+        let c = try makeConcept("projects/x/tasks/t1", "type: Task\nstatus: ready")
+        XCTAssertEqual(c.kind, .task)
+        XCTAssertEqual(c.type, "Task")
+        XCTAssertEqual(ConceptKind(type: " PROJECT "), .project)
+        XCTAssertEqual(ConceptKind(type: "Frozen"), .other("Frozen"))
+    }
+
     func testTitleFallsBackToID() throws {
         let c = try makeConcept("knowledge/foo", "type: knowledge")
         XCTAssertEqual(c.title, "knowledge/foo")
