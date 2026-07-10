@@ -155,6 +155,28 @@ withTempTaskBundle(
        "`doing` (not role-ready) is not dispatchable")
 }
 
+// MARK: objective rollup (objective-rollup)
+
+print("== objective rollup ==")
+let objConcepts = [
+    try Concept.parse(id: "objectives/o", raw: "---\ntype: objective\n---\n"),
+    try Concept.parse(id: "projects/p/project", raw: "---\ntype: project\nobjectives: [objectives/o]\n---\n"),
+    try Concept.parse(id: "projects/p/milestones/m", raw: "---\ntype: milestone\nproject: projects/p/project\n---\n"),
+    try Concept.parse(id: "projects/p/tasks/t1", raw: "---\ntype: task\nstatus: done\nparent: projects/p/milestones/m\n---\n"),
+    try Concept.parse(id: "projects/p/tasks/t2", raw: "---\ntype: task\nstatus: ready\nparent: projects/p/milestones/m\n---\n"),
+    try Concept.parse(id: "projects/q/tasks/t3", raw: "---\ntype: task\nstatus: ready\nobjectives: [objectives/o]\n---\n"),
+    try Concept.parse(id: "projects/q/tasks/t4", raw: "---\ntype: task\nstatus: ready\n---\n"), // unrelated
+]
+let ob = OKFBundle.inMemory(objConcepts)
+ok(ob.projects(forObjective: "objectives/o").map(\.id) == ["projects/p/project"], "projects(forObjective)")
+ok(Set(ob.tasks(forObjective: "objectives/o").map(\.id))
+    == ["projects/p/tasks/t1", "projects/p/tasks/t2", "projects/q/tasks/t3"],
+   "tasks(forObjective): hierarchy + direct link, excludes unrelated")
+let rr = ob.rollup(forObjective: "objectives/o")
+ok(rr.total == 3, "rollup total == 3")
+ok(rr.doneCount == 1, "rollup doneCount == 1")
+ok(abs(rr.fractionDone - 1.0 / 3.0) < 0.0001, "rollup fractionDone ≈ 0.33")
+
 // MARK: summary
 
 print("")
