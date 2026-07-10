@@ -128,19 +128,25 @@ final class SchemaTests: XCTestCase {
 
     func testParseNotAListThrows() {
         XCTAssertThrowsError(try BundleSchema.parse(yaml: "task_statuses: nope")) { error in
-            guard case SchemaError.notAList = error else { return XCTFail("got \(error)") }
+            guard let e = error as? SchemaError, case .notAList = e else {
+                return XCTFail("got \(error)")
+            }
         }
     }
 
     func testParseMissingIDThrows() {
         XCTAssertThrowsError(try BundleSchema.parse(yaml: "task_statuses: [{ label: X }]")) { error in
-            guard case SchemaError.missingID = error else { return XCTFail("got \(error)") }
+            guard let e = error as? SchemaError, case .missingID = e else {
+                return XCTFail("got \(error)")
+            }
         }
     }
 
     func testParseUnknownRoleThrows() {
         XCTAssertThrowsError(try BundleSchema.parse(yaml: "task_statuses: [{ id: foo, role: bogus }]")) { error in
-            guard case SchemaError.unknownRole = error else { return XCTFail("got \(error)") }
+            guard let e = error as? SchemaError, case .unknownRole = e else {
+                return XCTFail("got \(error)")
+            }
         }
     }
 }
