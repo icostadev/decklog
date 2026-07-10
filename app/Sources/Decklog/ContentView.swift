@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import OKFKit
 
 struct ContentView: View {
@@ -23,6 +24,25 @@ struct ContentView: View {
                 ValidationPanel(issues: store.issues, isExpanded: $issuesExpanded)
             }
         }
+        .alert("Couldn't open bundle", isPresented: errorAlertPresented, presenting: store.errorMessage) { message in
+            Button("Copy Details") { copyToClipboard(message) }
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
+        }
+    }
+
+    /// Drives the error alert off `store.errorMessage`; clearing it dismisses the alert.
+    private var errorAlertPresented: Binding<Bool> {
+        Binding(
+            get: { store.errorMessage != nil },
+            set: { presented in if !presented { store.errorMessage = nil } }
+        )
+    }
+
+    private func copyToClipboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     private var navigationArea: some View {
@@ -196,9 +216,6 @@ struct EmptyBundleView: View {
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
             Text("No bundle open").font(.headline)
-            if let error = store.errorMessage {
-                Text(error).foregroundStyle(.red).font(.caption)
-            }
             Button("Open Bundle…") { store.openBundle() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
