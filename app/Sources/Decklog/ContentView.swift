@@ -24,25 +24,17 @@ struct ContentView: View {
                 ValidationPanel(issues: store.issues, isExpanded: $issuesExpanded)
             }
         }
-        .alert("Couldn't open bundle", isPresented: errorAlertPresented, presenting: store.errorMessage) { message in
-            Button("Copy Details") { copyToClipboard(message) }
-            Button("OK", role: .cancel) {}
-        } message: { message in
-            Text(message)
+        .sheet(isPresented: errorAlertPresented) {
+            ErrorSheet(message: store.errorMessage ?? "") { store.errorMessage = nil }
         }
     }
 
-    /// Drives the error alert off `store.errorMessage`; clearing it dismisses the alert.
+    /// Drives the error sheet off `store.errorMessage`; clearing it dismisses the sheet.
     private var errorAlertPresented: Binding<Bool> {
         Binding(
             get: { store.errorMessage != nil },
             set: { presented in if !presented { store.errorMessage = nil } }
         )
-    }
-
-    private func copyToClipboard(_ text: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
     }
 
     private var navigationArea: some View {
@@ -219,5 +211,46 @@ struct EmptyBundleView: View {
             Button("Open Bundle…") { store.openBundle() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// A resizable error dialog with a scrollable, selectable message and a Copy button that
+/// does not dismiss (unlike a system alert).
+struct ErrorSheet: View {
+    let message: String
+    let onClose: () -> Void
+    @State private var copied = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Couldn't open bundle", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+
+            ScrollView {
+                Text(message)
+                    .font(.system(.callout, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+            }
+            .frame(minHeight: 180)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .textBackgroundColor)))
+
+            HStack {
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(message, forType: .string)
+                    copied = true
+                } label: {
+                    Label(copied ? "Copied" : "Copy Details",
+                          systemImage: copied ? "checkmark" : "doc.on.doc")
+                }
+                Spacer()
+                Button("Close") { onClose() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+        .frame(minWidth: 480, minHeight: 340)
     }
 }
