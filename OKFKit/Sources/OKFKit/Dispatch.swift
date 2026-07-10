@@ -15,12 +15,14 @@ public extension OKFBundle {
             return DispatchDecision(canDispatch: false, reasons: ["`\(id)` is not a task"])
         }
         var reasons: [String] = []
-        if task.status != TaskStatus.ready.rawValue {
-            reasons.append("status is `\(task.status ?? "none")`, not `ready`")
+        let readyStatus = schema.taskStatus(for: .ready)
+        if task.status != readyStatus {
+            reasons.append("status is `\(task.status ?? "none")`, not `\(readyStatus ?? "ready")`")
         }
+        let doneStatus = schema.taskStatus(for: .done)
         for blocker in task.blockedBy {
             let status = concept(blocker)?.status
-            if status != TaskStatus.done.rawValue {
+            if status != doneStatus {
                 reasons.append("blocked by `\(blocker)` (\(status ?? "missing"))")
             }
         }

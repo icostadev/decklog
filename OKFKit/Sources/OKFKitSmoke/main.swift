@@ -136,6 +136,25 @@ withTempTaskBundle(
     ok(unknownStatus("projects/x/tasks/t2"), "undeclared status `frozen` flagged")
 }
 
+// MARK: dispatch uses schema roles (schema-dispatch-executor)
+
+print("== dispatch uses schema roles ==")
+withTempTaskBundle(
+    schema: """
+    task_statuses:
+      - { id: todo, role: ready }
+      - { id: doing, role: in_progress }
+      - { id: done, role: done }
+    """,
+    tasks: ["projects/x/tasks/a": "todo", "projects/x/tasks/b": "doing"],
+    "dispatch vs schema"
+) { b in
+    ok(b.dispatchDecision(forTask: "projects/x/tasks/a").canDispatch,
+       "role-ready status `todo` is dispatchable")
+    ok(!b.dispatchDecision(forTask: "projects/x/tasks/b").canDispatch,
+       "`doing` (not role-ready) is not dispatchable")
+}
+
 // MARK: summary
 
 print("")

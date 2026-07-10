@@ -25,6 +25,10 @@ final class ExecutorSession: ObservableObject {
     let taskTitle: String
     private let prompt: String
     private let repoURL: URL
+    // Lifecycle statuses resolved from the bundle's schema (fall back to the built-in names).
+    private let inProgressStatus: String
+    private let inReviewStatus: String
+    private let readyStatus: String
     private var timedOut = false
     private var cancelled = false
     private var process: Process?
@@ -39,6 +43,9 @@ final class ExecutorSession: ObservableObject {
         self.taskTitle = task.title
         self.prompt = ExecutorPrompt.build(forTask: task, in: bundle)
         self.repoURL = repoURL
+        self.inProgressStatus = bundle.schema.taskStatus(for: .inProgress) ?? TaskStatus.inProgress.rawValue
+        self.inReviewStatus = bundle.schema.taskStatus(for: .inReview) ?? TaskStatus.inReview.rawValue
+        self.readyStatus = bundle.schema.taskStatus(for: .ready) ?? TaskStatus.ready.rawValue
     }
 
     func start() {
@@ -102,7 +109,7 @@ final class ExecutorSession: ObservableObject {
         // Now that the executor is running, mark the task in-progress.
         branch = branchName
         phase = .running
-        onStatusChange?(TaskStatus.inProgress.rawValue)
+        onStatusChange?(inProgressStatus)
 
         inPipe.fileHandleForWriting.write(Data(prompt.utf8))
         inPipe.fileHandleForWriting.closeFile()
@@ -127,7 +134,7 @@ final class ExecutorSession: ObservableObject {
             append(.system, "Cancelled — discarding run")
             try? WorktreeManager.remove(worktree, inRepo: repoURL)
             try? WorktreeManager.prune(inRepo: repoURL)
-            onStatusChange?(TaskStatus.ready.rawValue)
+            onStatusChange?(readyStatus)
             phase = .cancelled
             return
         }
@@ -160,7 +167,7 @@ final class ExecutorSession: ObservableObject {
 
         // 4. Hand off for human review.
         onArtifact?(branchName)
-        onStatusChange?(TaskStatus.inReview.rawValue)
+        onStatusChange?(inReviewStatus)
         phase = .review
     }
 

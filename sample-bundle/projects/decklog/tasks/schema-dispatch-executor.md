@@ -2,7 +2,7 @@
 type: task
 title: "Schema-drive dispatch & executor"
 description: "The dispatch gate and executor lifecycle transitions resolve statuses by role, so custom vocabularies don't break them."
-status: ready
+status: in_review
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-7
