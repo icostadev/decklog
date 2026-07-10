@@ -2,7 +2,7 @@
 type: task
 title: "Objective hierarchy & rollup queries"
 description: "OKFKit queries to navigate objective → project → milestone → task and roll up task status."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p1
 parent: projects/decklog/milestones/iteration-6

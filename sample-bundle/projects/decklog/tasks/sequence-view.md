@@ -2,7 +2,7 @@
 type: task
 title: "Plan (sequence) view"
 description: "Tasks in dependency order per project, with the objective each project serves — no dates."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-6
