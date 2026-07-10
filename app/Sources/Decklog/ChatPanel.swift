@@ -15,6 +15,7 @@ struct ChatPanel: View {
                 Divider()
                 transcript
                 Divider()
+                if !pendingOptions.isEmpty { optionsBar }
                 inputBar(maxHeight: max(geo.size.height * 0.5, 28))
             }
         }
@@ -80,10 +81,53 @@ struct ChatPanel: View {
         .padding(10)
     }
 
+    /// Options offered by the latest assistant question (empty otherwise).
+    private var pendingOptions: [String] {
+        guard !session.isRunning, let last = session.messages.last, last.role == .assistant
+        else { return [] }
+        return ChatOptions.parse(last.text).options
+    }
+
+    private var optionsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(pendingOptions, id: \.self) { option in
+                    Button(option) { session.send(option) }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+        }
+    }
+
     private func send() {
         let text = draft
         draft = ""
         session.send(text)
+    }
+}
+
+/// Parses a trailing ```decklog:options … ``` block from an assistant message into
+/// selectable options, returning the message text with that block removed.
+enum ChatOptions {
+    static func parse(_ text: String) -> (display: String, options: [String]) {
+        let lines = text.components(separatedBy: "\n")
+        guard let start = lines.firstIndex(where: {
+            $0.trimmingCharacters(in: .whitespaces) == "```decklog:options"
+        }) else { return (text, []) }
+        guard let end = lines[(start + 1)...].firstIndex(where: {
+            $0.trimmingCharacters(in: .whitespaces) == "```"
+        }) else { return (text, []) }
+
+        let options = lines[(start + 1)..<end]
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let display = (lines[..<start] + lines[(end + 1)...])
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return (display, options)
     }
 }
 
@@ -101,8 +145,8 @@ private struct MessageRow: View {
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.22)))
             }
         case .assistant:
-            // Rendered markdown, filling the column width.
-            Markdown(message.text)
+            // Rendered markdown; any decklog:options block is stripped (shown as buttons).
+            Markdown(ChatOptions.parse(message.text).display)
                 .textSelection(.enabled)
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .leading)

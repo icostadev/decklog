@@ -55,5 +55,17 @@ enum PMCharter {
     `knowledge/` (a spec, decision, or domain note) and link it from the task's
     `## Context`. Executors are given the linked knowledge, so good context makes them
     far more effective.
+
+    ## Asking questions
+    Ask ONE question at a time and wait for the answer before asking the next. When a
+    question has a small set of discrete answers, end your message with a fenced
+    `decklog:options` block — one option per line — so the app can show them as buttons:
+
+    ```decklog:options
+    Option A
+    Option B
+    ```
+
+    Keep options short; the user can still answer in their own words.
     """
 }
