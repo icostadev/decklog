@@ -23,11 +23,13 @@ final class PMAgentSession: ObservableObject {
     var onTurnComplete: ((String) -> Void)?
 
     private let bundleURL: URL
+    private let schema: BundleSchema
     private let sessionID = UUID().uuidString
     private var startedSession = false
 
-    init(bundleURL: URL) {
+    init(bundleURL: URL, schema: BundleSchema) {
         self.bundleURL = bundleURL
+        self.schema = schema
     }
 
     func send(_ prompt: String) {
@@ -62,7 +64,7 @@ final class PMAgentSession: ObservableObject {
             "--output-format", "stream-json", "--verbose",
             "--permission-mode", "acceptEdits",
             "--disallowedTools", "Bash",
-            "--append-system-prompt", PMCharter.text,
+            "--append-system-prompt", PMCharter.text(for: schema),
         ]
         args += resuming ? ["--resume", sessionID] : ["--session-id", sessionID]
 

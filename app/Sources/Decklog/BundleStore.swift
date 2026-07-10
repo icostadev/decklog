@@ -41,7 +41,7 @@ final class BundleStore: ObservableObject {
             issues = combinedIssues(loaded)
             errorMessage = nil
 
-            let session = PMAgentSession(bundleURL: url)
+            let session = PMAgentSession(bundleURL: url, schema: loaded.schema)
             session.onTurnComplete = { [weak self] commitMessage in
                 self?.commitAndReload(message: commitMessage)
             }
