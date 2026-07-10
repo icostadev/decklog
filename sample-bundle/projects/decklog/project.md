@@ -4,6 +4,7 @@ title: "Decklog"
 description: "Build Decklog — a git-native, agentic project manager — tracked in Decklog itself (dogfooding)."
 status: active
 repo: ".."
+objectives: [objectives/ship-decklog-v1]
 start: 2026-07-08
 timestamp: 2026-07-09T00:00:00Z
 ---
