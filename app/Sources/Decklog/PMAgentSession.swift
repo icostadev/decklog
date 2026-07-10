@@ -31,13 +31,20 @@ final class PMAgentSession: ObservableObject {
     }
 
     func send(_ prompt: String) {
-        let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isRunning else { return }
-        messages.append(Message(role: .user, text: trimmed))
+        send(prompt, display: prompt)
+    }
+
+    /// Sends `prompt` to the agent but shows `display` in the transcript. Used when the
+    /// literal prompt would be noise (e.g. the auto-diagnosis dumps the full issue list).
+    func send(_ prompt: String, display: String) {
+        let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPrompt.isEmpty, !isRunning else { return }
+        let shown = display.trimmingCharacters(in: .whitespacesAndNewlines)
+        messages.append(Message(role: .user, text: shown.isEmpty ? trimmedPrompt : shown))
         isRunning = true
         let resuming = startedSession
         startedSession = true
-        Task { await run(prompt: trimmed, resuming: resuming) }
+        Task { await run(prompt: trimmedPrompt, resuming: resuming) }
     }
 
     private func run(prompt: String, resuming: Bool) async {

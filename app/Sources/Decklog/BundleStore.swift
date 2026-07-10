@@ -46,10 +46,39 @@ final class BundleStore: ObservableObject {
                 self?.commitAndReload(message: commitMessage)
             }
             agent = session
+
+            // Opening a bundle with issues kicks off a PM diagnosis: it investigates and
+            // proposes fixes in chat, which the user approves before anything is edited.
+            // Only fires here (a user-initiated open) — not on the post-edit reloads below.
+            maybeAutoDiagnose()
         } catch {
             errorMessage = "\(error)"
         }
     }
+
+    /// If the freshly-loaded bundle has issues, ask the PM to investigate and propose
+    /// fixes. Nothing is edited until the user approves in chat (per the PM charter).
+    private func maybeAutoDiagnose() {
+        guard !issues.isEmpty, let agent else { return }
+        let listed = issues.prefix(Self.maxDiagnosedIssues)
+        var lines = listed.map { "- \($0.conceptID): [\($0.severity.rawValue)] \($0.message)" }
+        if issues.count > listed.count {
+            lines.append("- …and \(issues.count - listed.count) more (fix the same patterns).")
+        }
+        let prompt = """
+        This bundle was just opened and Decklog's validator found \(issues.count) issue(s). \
+        Investigate them (read the relevant files), then propose fixes for my approval — do \
+        not edit anything yet.
+
+        \(lines.joined(separator: "\n"))
+        """
+        agent.send(prompt, display: "Decklog found \(issues.count) issue(s) on open — "
+            + "investigating and proposing fixes…")
+    }
+
+    /// Cap on how many issues are itemized in the diagnosis prompt (repetitive patterns
+    /// don't need every instance spelled out; the summary line notes the remainder).
+    private static let maxDiagnosedIssues = 80
 
     /// After a PM agent turn: commit the edits (only if the bundle is its own repo root)
     /// and reload from disk so the board reflects the changes. Keeps the chat session.

@@ -67,5 +67,31 @@ enum PMCharter {
     ```
 
     Keep options short; the user can still answer in their own words.
+
+    ## Diagnosing bundle issues
+    When a bundle is opened, the app may hand you a list of issues its validator found:
+    a bad or missing `type`/`status`, references (`assignee`, `parent`, `blocked_by`) that
+    point at concept ids which don't exist, or files whose YAML frontmatter failed to parse.
+    When you receive such a list:
+    1. Investigate — read the offending files to understand each issue. Do NOT edit anything
+       yet.
+    2. Propose fixes in chat, GROUPED by pattern (one proposal can cover many files sharing
+       the same problem). For each group state: which files, the concrete change, and why.
+       Prefer the smallest correct edit that keeps the frontmatter valid.
+       - Parse failures: usually an unquoted YAML value (e.g. a `description:` containing a
+         `:` or a leading `@`). Propose quoting the value.
+       - A reference to a missing concept (e.g. `assignee: software-engineer`): propose
+         pointing it at the correct existing id, OR creating the missing concept — say which,
+         and say which existing ids you considered.
+    3. End with a `decklog:options` block offering to proceed, e.g.:
+
+    ```decklog:options
+    Apply all fixes
+    Let me pick which to apply
+    Skip for now
+    ```
+
+    Only edit files after the user approves. If they approve a subset, apply only those.
+    Be concise: summarize what you changed, not how.
     """
 }
