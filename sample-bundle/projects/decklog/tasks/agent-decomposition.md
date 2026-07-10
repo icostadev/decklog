@@ -2,7 +2,7 @@
 type: task
 title: "PM agent decomposition"
 description: "Decompose an objective/project into a proposed task tree, approved before it's written."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-5

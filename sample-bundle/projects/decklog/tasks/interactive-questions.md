@@ -2,7 +2,7 @@
 type: task
 title: "Interactive clarifying questions"
 description: "PM agent asks one question at a time; multiple-choice questions render as quick-reply buttons."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-5
