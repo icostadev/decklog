@@ -15,6 +15,12 @@ let package = Package(
             name: "OKFKit",
             dependencies: ["Yams"]
         ),
+        // A dependency-light smoke check runnable with only the Command Line Tools
+        // (no XCTest / full Xcode). Mirrors the key OKFKit tests. See scripts/smoke.sh.
+        .executableTarget(
+            name: "OKFKitSmoke",
+            dependencies: ["OKFKit"]
+        ),
         .testTarget(
             name: "OKFKitTests",
             dependencies: ["OKFKit"]
