@@ -2,7 +2,7 @@
 type: task
 title: "Tolerant bundle load"
 description: "Load a bundle even when some files don't parse — quarantine the bad ones and report them."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 timestamp: 2026-07-10T00:00:00Z

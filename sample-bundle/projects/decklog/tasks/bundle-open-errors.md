@@ -2,7 +2,7 @@
 type: task
 title: "Surface bundle-open errors in an alert"
 description: "Show open/parse failures in a copyable alert, not just in the empty state."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p3
 timestamp: 2026-07-10T00:00:00Z
