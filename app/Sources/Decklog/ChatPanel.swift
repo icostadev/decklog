@@ -89,17 +89,21 @@ struct ChatPanel: View {
     }
 
     private var optionsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(pendingOptions, id: \.self) { option in
-                    Button(option) { session.send(option) }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+        VStack(spacing: 6) {
+            ForEach(pendingOptions, id: \.self) { option in
+                Button {
+                    session.send(option)
+                } label: {
+                    Text(option)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
             }
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
         }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
     }
 
     private func send() {
