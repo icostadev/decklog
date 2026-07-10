@@ -18,6 +18,9 @@ final class BundleStore: ObservableObject {
         executors.values.sorted { $0.taskID < $1.taskID }
     }
 
+    /// Number of files the last tolerant load quarantined (unparseable, skipped).
+    var loadErrorCount: Int { bundle?.loadErrors.count ?? 0 }
+
     init() {
         if let path = ProcessInfo.processInfo.environment["DECKLOG_BUNDLE"] {
             load(url: URL(fileURLWithPath: path))

@@ -12,6 +12,9 @@ struct BoardView: View {
         .draft, .ready, .inProgress, .inReview, .done,
     ]
 
+    /// Raw status values that map to a lifecycle column (everything else is "unplaced").
+    private static let columnStatuses: Set<String> = Set(columns.map(\.rawValue))
+
     var body: some View {
         ScrollView(.horizontal) {
             HStack(alignment: .top, spacing: 12) {
@@ -19,6 +22,18 @@ struct BoardView: View {
                     ColumnView(
                         title: Self.label(status),
                         tasks: tasks(in: status),
+                        bundle: bundle
+                    )
+                }
+                // Any task whose status isn't a lifecycle column (missing or unknown) would
+                // otherwise vanish from the board. Surface it here so an imperfect bundle
+                // reads as imperfect, not empty. Only shown when non-empty.
+                if !unplacedTasks.isEmpty {
+                    ColumnView(
+                        title: "Unplaced",
+                        systemImage: "questionmark.circle",
+                        tint: .orange,
+                        tasks: unplacedTasks,
                         bundle: bundle
                     )
                 }
@@ -46,6 +61,18 @@ struct BoardView: View {
             }
     }
 
+    /// Tasks that can't be placed in a lifecycle column: no `status`, or an unknown value.
+    /// `cancelled` is intentionally excluded (it's deliberately off-board, not a mistake).
+    private var unplacedTasks: [Concept] {
+        scopedTasks
+            .filter { task in
+                guard let s = task.status, !s.isEmpty else { return true }
+                if Self.columnStatuses.contains(s) { return false }
+                return s != TaskStatus.cancelled.rawValue
+            }
+            .sorted { $0.title < $1.title }
+    }
+
     /// `projects/x/project` → `projects/x`
     private static func projectDir(_ projectID: String) -> String? {
         guard let slash = projectID.lastIndex(of: "/") else { return nil }
@@ -68,25 +95,40 @@ struct BoardView: View {
 
 struct ColumnView: View {
     let title: String
+    var systemImage: String? = nil
+    var tint: Color = .primary
     let tasks: [Concept]
     let bundle: OKFBundle
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title).font(.headline)
+            // Pinned header — stays put while the cards scroll under it.
+            HStack(spacing: 5) {
+                if let systemImage {
+                    Image(systemName: systemImage).foregroundStyle(tint)
+                }
+                Text(title).font(.headline).foregroundStyle(tint)
                 Spacer()
                 Text("\(tasks.count)").font(.caption).foregroundStyle(.secondary)
             }
-            ForEach(tasks) { task in
-                NavigationLink(value: task.id) {
-                    TaskCard(task: task, bundle: bundle)
+
+            // Each column scrolls independently so a long column doesn't push the board
+            // past the window. `LazyVStack` keeps large columns cheap.
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(tasks) { task in
+                        NavigationLink(value: task.id) {
+                            TaskCard(task: task, bundle: bundle)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
             }
-            Spacer(minLength: 0)
         }
-        .frame(width: 240, alignment: .leading)
+        // Fixed column width; fill the available height (second frame) so the inner
+        // ScrollView has a bounded frame to scroll in.
+        .frame(width: 240)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 

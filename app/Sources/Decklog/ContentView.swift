@@ -27,6 +27,11 @@ struct ContentView: View {
         .sheet(isPresented: errorAlertPresented) {
             ErrorSheet(message: store.errorMessage ?? "") { store.errorMessage = nil }
         }
+        // Tolerant load keeps a degraded bundle open; surface quarantined files immediately
+        // instead of leaving them hidden behind the collapsed validation panel.
+        .onChange(of: store.loadErrorCount) { count in
+            if count > 0 { issuesExpanded = true }
+        }
     }
 
     /// Drives the error sheet off `store.errorMessage`; clearing it dismisses the sheet.
@@ -90,13 +95,47 @@ struct ContentView: View {
     @ViewBuilder
     private var mainContent: some View {
         if let bundle = store.bundle {
-            BoardView(
-                bundle: bundle,
-                projectID: selectedScope == SidebarView.allScope ? nil : selectedScope
-            )
+            VStack(spacing: 0) {
+                if !bundle.loadErrors.isEmpty {
+                    LoadErrorBanner(count: bundle.loadErrors.count) {
+                        withAnimation(.easeInOut(duration: 0.15)) { issuesExpanded = true }
+                    }
+                }
+                BoardView(
+                    bundle: bundle,
+                    projectID: selectedScope == SidebarView.allScope ? nil : selectedScope
+                )
+            }
         } else {
             EmptyBundleView()
         }
+    }
+}
+
+/// A non-blocking strip shown above the board when tolerant load quarantined files.
+/// The bundle still opens; this makes the skipped files visible (and points at the panel)
+/// instead of leaving the board looking mysteriously empty.
+struct LoadErrorBanner: View {
+    let count: Int
+    let onShowDetails: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(count == 1
+                 ? "1 file couldn't be read and was skipped."
+                 : "\(count) files couldn't be read and were skipped.")
+                .font(.callout)
+            Spacer(minLength: 8)
+            Button("Show details", action: onShowDetails)
+                .buttonStyle(.link)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12))
+        .overlay(alignment: .bottom) { Divider() }
     }
 }
 
