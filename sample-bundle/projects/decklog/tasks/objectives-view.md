@@ -2,7 +2,7 @@
 type: task
 title: "Objectives view"
 description: "Show objectives in the sidebar with rolled-up task progress; drill into contributing projects/tasks."
-status: ready
+status: in_review
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-6

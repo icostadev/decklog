@@ -101,10 +101,15 @@ struct ContentView: View {
                         withAnimation(.easeInOut(duration: 0.15)) { issuesExpanded = true }
                     }
                 }
-                BoardView(
-                    bundle: bundle,
-                    projectID: selectedScope == SidebarView.allScope ? nil : selectedScope
-                )
+                if selectedScope != SidebarView.allScope,
+                   let scoped = bundle.concept(selectedScope), scoped.kind == .objective {
+                    ObjectiveView(objective: scoped, bundle: bundle)
+                } else {
+                    BoardView(
+                        bundle: bundle,
+                        projectID: selectedScope == SidebarView.allScope ? nil : selectedScope
+                    )
+                }
             }
         } else {
             EmptyBundleView()
@@ -150,6 +155,16 @@ struct SidebarView: View {
         store.bundle?.concepts(ofKind: .project) ?? []
     }
 
+    private var objectives: [Concept] {
+        store.bundle?.objectives() ?? []
+    }
+
+    /// A compact "done/total" progress label for an objective's rollup.
+    private func objectiveSubtitle(for objective: Concept) -> String {
+        guard let rollup = store.bundle?.rollup(forObjective: objective.id) else { return "" }
+        return rollup.total == 0 ? "no tasks yet" : "\(rollup.doneCount)/\(rollup.total) done"
+    }
+
     /// A short, friendly repo label: basename without a trailing `.git`.
     static func shortRepoName(_ repo: String) -> String {
         var s = repo
@@ -191,6 +206,21 @@ struct SidebarView: View {
                         selectedScope = project.id
                     }
                     .help(project.repo ?? "No repository linked")
+                }
+            }
+            if !objectives.isEmpty {
+                Section("Objectives") {
+                    ForEach(objectives) { objective in
+                        ScopeRow(
+                            title: objective.title,
+                            systemImage: "target",
+                            subtitle: objectiveSubtitle(for: objective),
+                            subtitleIcon: "chart.bar.fill",
+                            isSelected: selectedScope == objective.id
+                        ) {
+                            selectedScope = objective.id
+                        }
+                    }
                 }
             }
         }
