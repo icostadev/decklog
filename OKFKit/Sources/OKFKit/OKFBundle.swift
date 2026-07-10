@@ -11,20 +11,40 @@ public enum OKFError: Error, CustomStringConvertible {
     }
 }
 
+/// A file that could not be loaded (e.g. malformed YAML frontmatter). Tolerant load
+/// quarantines it and loads the rest of the bundle.
+public struct BundleLoadError: Equatable {
+    public let path: String   // relative to the bundle root
+    public let message: String
+
+    public init(path: String, message: String) {
+        self.path = path
+        self.message = message
+    }
+}
+
 /// An in-memory view of an OKF bundle: all non-reserved concepts keyed by id,
 /// plus derived graph queries. Read-only for Iteration 1.
 public struct OKFBundle {
     public let rootURL: URL
     public private(set) var concepts: [String: Concept]
     public var okfVersion: String?
+    /// Files that failed to load (tolerant load), path + reason.
+    public private(set) var loadErrors: [BundleLoadError]
 
     /// Files that are reserved by OKF and are never concepts.
     static let reservedFilenames: Set<String> = ["index.md", "log.md"]
 
-    public init(rootURL: URL, concepts: [String: Concept], okfVersion: String? = nil) {
+    public init(
+        rootURL: URL,
+        concepts: [String: Concept],
+        okfVersion: String? = nil,
+        loadErrors: [BundleLoadError] = []
+    ) {
         self.rootURL = rootURL
         self.concepts = concepts
         self.okfVersion = okfVersion
+        self.loadErrors = loadErrors
     }
 
     /// Build a bundle from concepts without touching disk (useful for tests).
@@ -65,18 +85,27 @@ public struct OKFBundle {
         }
 
         var concepts: [String: Concept] = [:]
+        var loadErrors: [BundleLoadError] = []
         for case let url as URL in enumerator {
             guard url.pathExtension == "md" else { continue }
             guard !reservedFilenames.contains(url.lastPathComponent) else { continue }
 
             let relative = relativePath(of: url, from: rootURL)
             let id = String(relative.dropLast(3)) // drop ".md"
-            let raw = try String(contentsOf: url, encoding: .utf8)
-            concepts[id] = try Concept.parse(id: id, raw: raw)
+            do {
+                let raw = try String(contentsOf: url, encoding: .utf8)
+                concepts[id] = try Concept.parse(id: id, raw: raw)
+            } catch {
+                // Tolerant load: quarantine this file, keep loading the rest.
+                loadErrors.append(BundleLoadError(path: relative, message: "\(error)"))
+            }
         }
 
         let version = rootOKFVersion(at: rootURL)
-        return OKFBundle(rootURL: rootURL, concepts: concepts, okfVersion: version)
+        return OKFBundle(
+            rootURL: rootURL, concepts: concepts, okfVersion: version,
+            loadErrors: loadErrors.sorted { $0.path < $1.path }
+        )
     }
 
     /// The single place `okf_version` may live: the root `index.md` frontmatter.

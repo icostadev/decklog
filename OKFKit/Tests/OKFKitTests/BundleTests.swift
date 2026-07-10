@@ -40,6 +40,26 @@ final class BundleTests: XCTestCase {
         XCTAssertNil(bundle.concept("projects/checkout-revamp/index"))
     }
 
+    func testTolerantLoadQuarantinesBadFileAndKeepsGoodOnes() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("okfkit-tolerant-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(
+            at: dir.appendingPathComponent("tasks"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        try "---\ntype: task\ntitle: Good\n---\nok"
+            .write(to: dir.appendingPathComponent("tasks/good.md"), atomically: true, encoding: .utf8)
+        // Unquoted value with an inner `: ` — invalid YAML (mapping values not allowed).
+        try "---\ntype: task\ndescription: a: b\n---\nx"
+            .write(to: dir.appendingPathComponent("tasks/bad.md"), atomically: true, encoding: .utf8)
+
+        let bundle = try OKFBundle.load(at: dir) // must NOT throw
+        XCTAssertNotNil(bundle.concept("tasks/good"))
+        XCTAssertNil(bundle.concept("tasks/bad"))
+        XCTAssertEqual(bundle.loadErrors.map(\.path), ["tasks/bad.md"])
+        XCTAssertFalse(bundle.loadErrors.first?.message.isEmpty ?? true)
+    }
+
     func testDerivedBlocksIsInverseOfBlockedBy() throws {
         let bundle = try OKFBundle.load(at: sampleBundleURL())
         XCTAssertEqual(

@@ -24,11 +24,18 @@ final class BundleStore: ObservableObject {
         }
     }
 
+    /// Validation issues plus any tolerant-load failures (quarantined files).
+    private func combinedIssues(_ bundle: OKFBundle) -> [ValidationIssue] {
+        bundle.validate() + bundle.loadErrors.map {
+            ValidationIssue(severity: .error, conceptID: $0.path, message: "failed to load — \($0.message)")
+        }
+    }
+
     func load(url: URL) {
         do {
             let loaded = try OKFBundle.load(at: url)
             bundle = loaded
-            issues = loaded.validate()
+            issues = combinedIssues(loaded)
             errorMessage = nil
 
             let session = PMAgentSession(bundleURL: url)
@@ -50,7 +57,7 @@ final class BundleStore: ObservableObject {
         }
         if let reloaded = try? OKFBundle.load(at: url) {
             bundle = reloaded
-            issues = reloaded.validate()
+            issues = combinedIssues(reloaded)
         }
     }
 
@@ -95,7 +102,7 @@ final class BundleStore: ObservableObject {
         }
         if let reloaded = try? OKFBundle.load(at: bundle.rootURL) {
             self.bundle = reloaded
-            self.issues = reloaded.validate()
+            self.issues = combinedIssues(reloaded)
         }
     }
 
