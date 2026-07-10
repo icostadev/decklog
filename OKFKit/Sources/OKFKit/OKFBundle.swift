@@ -29,6 +29,8 @@ public struct OKFBundle {
     public let rootURL: URL
     public private(set) var concepts: [String: Concept]
     public var okfVersion: String?
+    /// The status vocabulary this bundle uses (from `decklog.yaml`, or the built-in default).
+    public let schema: BundleSchema
     /// Files that failed to load (tolerant load), path + reason.
     public private(set) var loadErrors: [BundleLoadError]
 
@@ -39,11 +41,13 @@ public struct OKFBundle {
         rootURL: URL,
         concepts: [String: Concept],
         okfVersion: String? = nil,
+        schema: BundleSchema = .default,
         loadErrors: [BundleLoadError] = []
     ) {
         self.rootURL = rootURL
         self.concepts = concepts
         self.okfVersion = okfVersion
+        self.schema = schema
         self.loadErrors = loadErrors
     }
 
@@ -102,10 +106,28 @@ public struct OKFBundle {
         }
 
         let version = rootOKFVersion(at: rootURL)
+        let schema = loadSchema(at: rootURL, into: &loadErrors)
         return OKFBundle(
             rootURL: rootURL, concepts: concepts, okfVersion: version,
+            schema: schema,
             loadErrors: loadErrors.sorted { $0.path < $1.path }
         )
+    }
+
+    /// Reads the bundle's status vocabulary from a root `decklog.yaml`. Tolerant: an absent
+    /// file uses the built-in default; a malformed one falls back to the default and records a
+    /// load error (so it surfaces alongside quarantined files).
+    private static func loadSchema(at rootURL: URL, into loadErrors: inout [BundleLoadError]) -> BundleSchema {
+        let url = rootURL.appendingPathComponent("decklog.yaml")
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else {
+            return .default
+        }
+        do {
+            return try BundleSchema.parse(yaml: raw)
+        } catch {
+            loadErrors.append(BundleLoadError(path: "decklog.yaml", message: "\(error)"))
+            return .default
+        }
     }
 
     /// The single place `okf_version` may live: the root `index.md` frontmatter.

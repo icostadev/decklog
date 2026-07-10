@@ -2,7 +2,7 @@
 type: task
 title: "Load decklog.yaml (tolerant)"
 description: "Read a root decklog.yaml into the BundleSchema on open; absent uses the default, malformed falls back and reports."
-status: ready
+status: in_review
 assignee: agents/backend-impl
 priority: p1
 parent: projects/decklog/milestones/iteration-7

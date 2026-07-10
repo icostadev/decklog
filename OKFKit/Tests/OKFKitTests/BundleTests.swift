@@ -60,6 +60,41 @@ final class BundleTests: XCTestCase {
         XCTAssertFalse(bundle.loadErrors.first?.message.isEmpty ?? true)
     }
 
+    func testAbsentSchemaUsesDefault() throws {
+        // The sample bundle has no decklog.yaml → built-in vocabulary.
+        let bundle = try OKFBundle.load(at: sampleBundleURL())
+        XCTAssertEqual(bundle.schema, .default)
+    }
+
+    func testLoadsCustomSchemaFromDecklogYaml() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("okfkit-schema-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        try "task_statuses: [backlog, doing, done]"
+            .write(to: dir.appendingPathComponent("decklog.yaml"), atomically: true, encoding: .utf8)
+
+        let bundle = try OKFBundle.load(at: dir)
+        XCTAssertEqual(bundle.schema.taskStatuses.map(\.id), ["backlog", "doing", "done"])
+        XCTAssertTrue(bundle.loadErrors.isEmpty)
+    }
+
+    func testMalformedSchemaFallsBackAndReports() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("okfkit-schema-bad-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        // A scalar where a list is required — must not fail the open.
+        try "task_statuses: oops"
+            .write(to: dir.appendingPathComponent("decklog.yaml"), atomically: true, encoding: .utf8)
+
+        let bundle = try OKFBundle.load(at: dir)          // must NOT throw
+        XCTAssertEqual(bundle.schema, .default)            // fell back
+        XCTAssertTrue(bundle.loadErrors.contains { $0.path == "decklog.yaml" })
+    }
+
     func testDerivedBlocksIsInverseOfBlockedBy() throws {
         let bundle = try OKFBundle.load(at: sampleBundleURL())
         XCTAssertEqual(

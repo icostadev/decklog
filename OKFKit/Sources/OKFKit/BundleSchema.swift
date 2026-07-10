@@ -1,4 +1,5 @@
 import Foundation
+import Yams
 
 /// A semantic role a task status plays in the lifecycle. Code that acts on statuses (the
 /// dispatch gate, the executor, the board's blocker/off-board logic) keys off these roles
@@ -105,5 +106,87 @@ public struct BundleSchema: Equatable {
     /// Display label for a task status id (falls back to a derived label for unknown ids).
     public func taskLabel(_ id: String) -> String {
         taskStatuses.first { $0.id == id }?.label ?? StatusDef.defaultLabel(for: id)
+    }
+}
+
+/// A problem parsing `decklog.yaml`. Surfaced tolerantly (fall back to `.default`).
+public enum SchemaError: Error, CustomStringConvertible {
+    case notAList(section: String)
+    case missingID(section: String)
+    case unknownRole(String)
+
+    public var description: String {
+        switch self {
+        case .notAList(let s):   return "`\(s)` must be a list of statuses"
+        case .missingID(let s):  return "a status entry in `\(s)` is missing its `id`"
+        case .unknownRole(let r):
+            return "unknown role `\(r)` (expected one of: "
+                + TaskRole.allCases.map(\.rawValue).joined(separator: ", ") + ")"
+        }
+    }
+}
+
+public extension BundleSchema {
+    /// Parse a `decklog.yaml`. Empty input or any missing section falls back to the built-in
+    /// default for that section. Throws `SchemaError` on a malformed section.
+    static func parse(yaml: String) throws -> BundleSchema {
+        guard !yaml.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let node = try Yams.compose(yaml: yaml), node.mapping != nil else {
+            return .default
+        }
+        return BundleSchema(
+            taskStatuses: try node["task_statuses"].map { try parseTaskStatuses($0) }
+                ?? BundleSchema.default.taskStatuses,
+            milestoneStatuses: try node["milestone_statuses"].map { try parseSimpleStatuses($0, section: "milestone_statuses") }
+                ?? BundleSchema.default.milestoneStatuses,
+            objectiveStatuses: try node["objective_statuses"].map { try parseSimpleStatuses($0, section: "objective_statuses") }
+                ?? BundleSchema.default.objectiveStatuses
+        )
+    }
+
+    /// The role a status id fills in the built-in vocabulary, used to auto-bind a role when a
+    /// `decklog.yaml` entry doesn't state one (e.g. `- ready` binds `.ready`).
+    private static func defaultRole(forID id: String) -> TaskRole? {
+        BundleSchema.default.taskStatuses.first { $0.id == id }?.role
+    }
+
+    private static func parseTaskStatuses(_ node: Yams.Node) throws -> [StatusDef] {
+        guard let seq = node.sequence else { throw SchemaError.notAList(section: "task_statuses") }
+        return try seq.map { element in
+            // Shorthand: a bare string is the id; role auto-binds; cancelled is off-board.
+            if let id = element.string {
+                let role = defaultRole(forID: id)
+                return StatusDef(id: id, isColumn: role != .cancelled, role: role)
+            }
+            guard let id = element["id"]?.string else {
+                throw SchemaError.missingID(section: "task_statuses")
+            }
+            let role: TaskRole?
+            if let raw = element["role"]?.string {
+                guard let parsed = TaskRole(rawValue: raw) else { throw SchemaError.unknownRole(raw) }
+                role = parsed
+            } else {
+                role = defaultRole(forID: id)
+            }
+            return StatusDef(
+                id: id,
+                label: element["label"]?.string,
+                isColumn: element["column"]?.bool ?? (role != .cancelled),
+                role: role
+            )
+        }
+    }
+
+    private static func parseSimpleStatuses(_ node: Yams.Node, section: String) throws -> [StatusDef] {
+        guard let seq = node.sequence else { throw SchemaError.notAList(section: section) }
+        return try seq.map { element in
+            if let id = element.string { return StatusDef(id: id) }
+            guard let id = element["id"]?.string else { throw SchemaError.missingID(section: section) }
+            return StatusDef(
+                id: id,
+                label: element["label"]?.string,
+                isColumn: element["column"]?.bool ?? true
+            )
+        }
     }
 }
