@@ -2,7 +2,7 @@
 type: milestone
 title: "Iteration 7 — Configurable schema"
 description: "A per-bundle decklog.yaml lets a bundle declare its own status vocabulary; the board, validation, dispatch, executor, and PM charter derive from it."
-status: planned
+status: done
 project: projects/decklog/project
 timestamp: 2026-07-10T00:00:00Z
 ---

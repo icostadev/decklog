@@ -2,7 +2,7 @@
 type: task
 title: "Schema-aware PM charter"
 description: "The PM agent's charter reflects the bundle's actual vocabulary, so it stops correcting custom statuses back to the defaults."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-7

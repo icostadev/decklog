@@ -2,7 +2,7 @@
 type: task
 title: "Bundle schema model"
 description: "A BundleSchema value type describing the status vocabulary, with a default that reproduces today's built-in enums."
-status: in_review
+status: done
 assignee: agents/backend-impl
 priority: p1
 parent: projects/decklog/milestones/iteration-7
