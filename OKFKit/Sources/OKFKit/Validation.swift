@@ -58,7 +58,7 @@ public extension OKFBundle {
 
     private func statusIssue(for c: Concept) -> ValidationIssue? {
         guard let status = c.status,
-              let allowed = StatusVocabulary.allowed(for: c.kind) else { return nil }
+              let allowed = schema.allowedStatuses(for: c.kind) else { return nil }
         guard !allowed.contains(status) else { return nil }
         return .init(
             severity: .warning,

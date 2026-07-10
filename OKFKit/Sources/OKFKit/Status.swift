@@ -28,18 +28,5 @@ public enum ObjectiveStatus: String, CaseIterable {
     case missed
 }
 
-enum StatusVocabulary {
-    /// Allowed raw status values for a kind, or `nil` if the kind has no status.
-    static func allowed(for kind: ConceptKind) -> [String]? {
-        switch kind {
-        case .task:
-            return TaskStatus.allCases.map(\.rawValue)
-        case .milestone, .project:
-            return WorkStatus.allCases.map(\.rawValue)
-        case .objective:
-            return ObjectiveStatus.allCases.map(\.rawValue)
-        default:
-            return nil
-        }
-    }
-}
+// The allowed-status vocabulary now lives in `BundleSchema` (per-bundle, from decklog.yaml);
+// these enums remain the source of `BundleSchema.default` and the semantic role names.

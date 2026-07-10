@@ -7,27 +7,21 @@ struct BoardView: View {
     let bundle: OKFBundle
     let projectID: String?
 
-    // `cancelled` is intentionally off-board; `blocked` is a derived card badge.
-    private static let columns: [TaskStatus] = [
-        .draft, .ready, .inProgress, .inReview, .done,
-    ]
-
-    /// Raw status values that map to a lifecycle column (everything else is "unplaced").
-    private static let columnStatuses: Set<String> = Set(columns.map(\.rawValue))
-
     var body: some View {
         ScrollView(.horizontal) {
             HStack(alignment: .top, spacing: 12) {
-                ForEach(Self.columns, id: \.self) { status in
+                // Columns come from the bundle's schema (decklog.yaml or the built-in default);
+                // off-board statuses (e.g. cancelled) declare `column: false`.
+                ForEach(bundle.schema.taskColumns, id: \.id) { col in
                     ColumnView(
-                        title: Self.label(status),
-                        tasks: tasks(in: status),
+                        title: col.label,
+                        tasks: tasks(withStatus: col.id),
                         bundle: bundle
                     )
                 }
-                // Any task whose status isn't a lifecycle column (missing or unknown) would
-                // otherwise vanish from the board. Surface it here so an imperfect bundle
-                // reads as imperfect, not empty. Only shown when non-empty.
+                // Any task whose status isn't declared in the schema (missing or unknown)
+                // would otherwise vanish from the board. Surface it here so an imperfect
+                // bundle reads as imperfect, not empty. Only shown when non-empty.
                 if !unplacedTasks.isEmpty {
                     ColumnView(
                         title: "Unplaced",
@@ -51,9 +45,9 @@ struct BoardView: View {
         return all.filter { $0.id.hasPrefix(dir + "/") }
     }
 
-    private func tasks(in status: TaskStatus) -> [Concept] {
+    private func tasks(withStatus id: String) -> [Concept] {
         scopedTasks
-            .filter { $0.status == status.rawValue }
+            .filter { $0.status == id }
             .sorted { lhs, rhs in
                 let l = lhs.order ?? ""
                 let r = rhs.order ?? ""
@@ -61,14 +55,14 @@ struct BoardView: View {
             }
     }
 
-    /// Tasks that can't be placed in a lifecycle column: no `status`, or an unknown value.
-    /// `cancelled` is intentionally excluded (it's deliberately off-board, not a mistake).
+    /// Tasks whose status isn't declared in the schema (missing or unknown). A status that's
+    /// declared but off-board (e.g. cancelled) is intentionally hidden, not "unplaced".
     private var unplacedTasks: [Concept] {
-        scopedTasks
+        let declared = Set(bundle.schema.taskStatuses.map(\.id))
+        return scopedTasks
             .filter { task in
                 guard let s = task.status, !s.isEmpty else { return true }
-                if Self.columnStatuses.contains(s) { return false }
-                return s != TaskStatus.cancelled.rawValue
+                return !declared.contains(s)
             }
             .sorted { $0.title < $1.title }
     }
@@ -82,14 +76,6 @@ struct BoardView: View {
     private var scopeTitle: String {
         if let projectID, let project = bundle.concept(projectID) { return project.title }
         return "All tasks"
-    }
-
-    private static func label(_ status: TaskStatus) -> String {
-        switch status {
-        case .inProgress: return "In progress"
-        case .inReview: return "In review"
-        default: return status.rawValue.capitalized
-        }
     }
 }
 
@@ -137,7 +123,8 @@ struct TaskCard: View {
     let bundle: OKFBundle
 
     private var hasOpenBlockers: Bool {
-        task.blockedBy.contains { bundle.concept($0)?.status != TaskStatus.done.rawValue }
+        let done = bundle.schema.taskStatus(for: .done)
+        return task.blockedBy.contains { bundle.concept($0)?.status != done }
     }
 
     var body: some View {

@@ -98,6 +98,44 @@ withTempBundle("task_statuses: oops", "malformed schema") { b in
     ok(b.loadErrors.contains { $0.path == "decklog.yaml" }, "malformed -> decklog.yaml load error")
 }
 
+// MARK: validation reads the schema (schema-board-validation)
+
+print("== validation uses schema ==")
+func withTempTaskBundle(
+    schema: String, tasks: [String: String], _ label: String, _ body: (OKFBundle) -> Void
+) {
+    let dir = FileManager.default.temporaryDirectory
+        .appendingPathComponent("okfkit-smoke-\(UUID().uuidString)")
+    do {
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try schema.write(to: dir.appendingPathComponent("decklog.yaml"), atomically: true, encoding: .utf8)
+        for (id, status) in tasks {
+            let fileURL = dir.appendingPathComponent(id + ".md")
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try "---\ntype: task\nstatus: \(status)\n---\n"
+                .write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+        body(try OKFBundle.load(at: dir))
+    } catch {
+        print("FAIL  \(label): setup error \(error)"); failures += 1
+    }
+    try? FileManager.default.removeItem(at: dir)
+}
+
+withTempTaskBundle(
+    schema: "task_statuses: [backlog, doing, done]",
+    tasks: ["projects/x/tasks/t1": "backlog", "projects/x/tasks/t2": "frozen"],
+    "validation vs schema"
+) { b in
+    let issues = b.validate()
+    func unknownStatus(_ id: String) -> Bool {
+        issues.contains { $0.conceptID == id && $0.message.contains("unknown status") }
+    }
+    ok(!unknownStatus("projects/x/tasks/t1"), "custom status `backlog` accepted (no warning)")
+    ok(unknownStatus("projects/x/tasks/t2"), "undeclared status `frozen` flagged")
+}
+
 // MARK: summary
 
 print("")

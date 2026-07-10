@@ -2,7 +2,7 @@
 type: task
 title: "Schema-drive board & validation"
 description: "The board columns/labels and the status validation read the loaded schema instead of the hardcoded enums."
-status: ready
+status: in_review
 assignee: agents/backend-impl
 priority: p2
 parent: projects/decklog/milestones/iteration-7
